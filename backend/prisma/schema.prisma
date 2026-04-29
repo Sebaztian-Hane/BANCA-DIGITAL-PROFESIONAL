@@ -1,8 +1,63 @@
 generator client {
-  provider = "prisma-client"
-  output   = "../generated/prisma"
+  provider = "prisma-client-js"
 }
 
 datasource db {
   provider = "mysql"
+}
+
+model User {
+  id                   Int           @id @default(autoincrement())
+  email                String        @unique
+  password             String
+  name                 String
+  dni                  String        @unique
+  phone                String
+  address              String?
+  role                 Role          @default(CLIENT)
+  balance              Float         @default(0)
+  isActive             Boolean       @default(true)
+  createdAt            DateTime      @default(now())
+  updatedAt            DateTime      @updatedAt
+  receivedTransactions Transaction[] @relation("Receiver")
+  sentTransactions     Transaction[] @relation("Sender")
+
+  @@map("users")
+}
+
+model Transaction {
+  id          Int               @id @default(autoincrement())
+  amount      Float
+  type        TransactionType
+  description String?
+  status      TransactionStatus @default(COMPLETED)
+  reference   String?           @unique
+  createdAt   DateTime          @default(now())
+  senderId    Int?
+  receiverId  Int?
+  receiver    User?             @relation("Receiver", fields: [receiverId], references: [id])
+  sender      User?             @relation("Sender", fields: [senderId], references: [id])
+
+  @@index([senderId])
+  @@index([receiverId])
+  @@index([createdAt])
+  @@map("transactions")
+}
+
+enum Role {
+  CLIENT
+  ADMIN
+}
+
+enum TransactionType {
+  DEPOSIT
+  WITHDRAWAL
+  TRANSFER
+}
+
+enum TransactionStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  CANCELLED
 }
